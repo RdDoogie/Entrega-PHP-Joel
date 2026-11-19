@@ -13,9 +13,7 @@ class Authenticator
 
         if ($user) {
             if (password_verify($password, $user['password'])) {
-                $this->login([
-                    'email' => $email
-                ]);
+                $this->login($user);
 
                 return true;
             }
@@ -27,6 +25,8 @@ class Authenticator
     public function login($user)
     {
         $_SESSION['user'] = [
+            // id is what note ownership checks compare against
+            'id' => (int) $user['id'],
             'email' => $user['email']
         ];
 

@@ -4,6 +4,7 @@ namespace Http\controllers;
 
 use Core\App;
 use Core\Database;
+use Core\Session;
 use Core\Validator;
 
 class NotesController
@@ -17,7 +18,9 @@ class NotesController
 
     public function index()
     {
-        $notes = $this->db->query('select * from notes where user_id = 1')->get();
+        $notes = $this->db->query('select * from notes where user_id = :user_id', [
+            'user_id' => Session::get('user')['id']
+        ])->get();
 
         view("notes/index.view.php", [
             'heading' => 'My Notes',
@@ -27,7 +30,7 @@ class NotesController
 
     public function show()
     {
-        $currentUserId = 1;
+        $currentUserId = Session::get('user')['id'];
 
         $note = $this->db->query('select * from notes where id = :id', [
             'id' => $_GET['id']
@@ -66,7 +69,7 @@ class NotesController
 
         $this->db->query('INSERT INTO notes(body, user_id) VALUES(:body, :user_id)', [
             'body' => $_POST['body'],
-            'user_id' => 1
+            'user_id' => Session::get('user')['id']
         ]);
 
         header('location: /notes');
@@ -75,7 +78,7 @@ class NotesController
 
     public function edit()
     {
-        $currentUserId = 1;
+        $currentUserId = Session::get('user')['id'];
 
         $note = $this->db->query('select * from notes where id = :id', [
             'id' => $_GET['id']
@@ -92,7 +95,7 @@ class NotesController
 
     public function update()
     {
-        $currentUserId = 222221;
+        $currentUserId = Session::get('user')['id'];
 
         // find the corresponding note
         $note = $this->db->query('select * from notes where id = :id', [
@@ -130,7 +133,7 @@ class NotesController
 
     public function destroy()
     {
-        $currentUserId = 1;
+        $currentUserId = Session::get('user')['id'];
 
         $note = $this->db->query('select * from notes where id = :id', [
             'id' => $_POST['id']
