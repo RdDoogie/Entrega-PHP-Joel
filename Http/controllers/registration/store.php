@@ -1,6 +1,7 @@
 <?php
 
 use Core\App;
+use Core\Authenticator;
 use Core\Database;
 use Core\Validator;
 
@@ -11,7 +12,7 @@ $password = $_POST['password'];
 
 $errors = [];
 if (!Validator::email($email)) {
-   $errors['email'] = 'Please provide a valid email address.';
+    $errors['email'] = 'Please provide a valid email address.';
 }
 
 if (!Validator::string($password, 7, 255)) {
@@ -37,7 +38,10 @@ if ($user) {
         'password' => password_hash($password, PASSWORD_BCRYPT)
     ]);
 
-    login($user);
+    (new Authenticator)->login([
+        'id' => $db->connection->lastInsertId(),
+        'email' => $email
+    ]);
 
     header('location: /');
     exit();

@@ -15,9 +15,16 @@ class NotesController
         $this->db = App::resolve(Database::class);
     }
 
+    protected function userId(): int
+    {
+        return (int) $_SESSION['user']['id'];
+    }
+
     public function index()
     {
-        $notes = $this->db->query('select * from notes where user_id = 1')->get();
+        $notes = $this->db->query('select * from notes where user_id = :user_id', [
+            'user_id' => $this->userId()
+        ])->get();
 
         view("notes/index.view.php", [
             'heading' => 'My Notes',
@@ -27,13 +34,11 @@ class NotesController
 
     public function show()
     {
-        $currentUserId = 1;
-
         $note = $this->db->query('select * from notes where id = :id', [
             'id' => $_GET['id']
         ])->findOrFail();
 
-        authorize($note['user_id'] === $currentUserId);
+        authorize((int) $note['user_id'] === $this->userId());
 
         view("notes/show.view.php", [
             'heading' => 'Note',
@@ -66,7 +71,7 @@ class NotesController
 
         $this->db->query('INSERT INTO notes(body, user_id) VALUES(:body, :user_id)', [
             'body' => $_POST['body'],
-            'user_id' => 1
+            'user_id' => $this->userId()
         ]);
 
         header('location: /notes');
@@ -75,13 +80,11 @@ class NotesController
 
     public function edit()
     {
-        $currentUserId = 1;
-
         $note = $this->db->query('select * from notes where id = :id', [
             'id' => $_GET['id']
         ])->findOrFail();
 
-        authorize($note['user_id'] === $currentUserId);
+        authorize((int) $note['user_id'] === $this->userId());
 
         view("notes/edit.view.php", [
             'heading' => 'Edit Note',
@@ -92,24 +95,18 @@ class NotesController
 
     public function update()
     {
-        $currentUserId = 222221;
-
-        // find the corresponding note
         $note = $this->db->query('select * from notes where id = :id', [
             'id' => $_POST['id']
         ])->findOrFail();
 
-        // authorize that the current user can edit the note
-        authorize($note['user_id'] === $currentUserId);
+        authorize((int) $note['user_id'] === $this->userId());
 
-        // validate the form
         $errors = [];
 
-        if (! Validator::string($_POST['body'], 1, 10)) {
+        if (! Validator::string($_POST['body'], 1, 1000)) {
             $errors['body'] = 'A body of no more than 1,000 characters is required.';
         }
 
-        // if no validation errors, update the record in the notes database table.
         if (count($errors)) {
             return view('notes/edit.view.php', [
                 'heading' => 'Edit Note',
@@ -130,13 +127,11 @@ class NotesController
 
     public function destroy()
     {
-        $currentUserId = 1;
-
         $note = $this->db->query('select * from notes where id = :id', [
             'id' => $_POST['id']
         ])->findOrFail();
 
-        authorize($note['user_id'] === $currentUserId);
+        authorize((int) $note['user_id'] === $this->userId());
 
         $this->db->query('delete from notes where id = :id', [
             'id' => $_POST['id']
