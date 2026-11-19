@@ -2,7 +2,9 @@
 
 namespace Http\controllers;
 
+use App\DAO\MySqlNoteDAO;
 use Core\App;
+use App\DAO\NoteDAO;
 use Core\Database;
 use Core\Validator;
 
@@ -22,9 +24,8 @@ class NotesController
 
     public function index()
     {
-        $notes = $this->db->query('select * from notes where user_id = :user_id', [
-            'user_id' => $this->userId()
-        ])->get();
+
+        $notes = App::resolve(NoteDAO::class)->findByUser($this->userId());
 
         view("notes/index.view.php", [
             'heading' => 'My Notes',
@@ -34,9 +35,8 @@ class NotesController
 
     public function show()
     {
-        $note = $this->db->query('select * from notes where id = :id', [
-            'id' => $_GET['id']
-        ])->findOrFail();
+
+        $note = App::resolve(NoteDAO::class)->find((int) $_GET['id']) ?? abort();
 
         authorize((int) $note['user_id'] === $this->userId());
 
@@ -69,10 +69,7 @@ class NotesController
             ]);
         }
 
-        $this->db->query('INSERT INTO notes(body, user_id) VALUES(:body, :user_id)', [
-            'body' => $_POST['body'],
-            'user_id' => $this->userId()
-        ]);
+        App::resolve(NoteDAO::class)->create($_POST['body'], $this->userId());
 
         header('location: /notes');
         die();
@@ -80,9 +77,7 @@ class NotesController
 
     public function edit()
     {
-        $note = $this->db->query('select * from notes where id = :id', [
-            'id' => $_GET['id']
-        ])->findOrFail();
+        $note = App::resolve(NoteDAO::class)->find((int) $_GET['id']) ?? abort();
 
         authorize((int) $note['user_id'] === $this->userId());
 
@@ -95,9 +90,7 @@ class NotesController
 
     public function update()
     {
-        $note = $this->db->query('select * from notes where id = :id', [
-            'id' => $_POST['id']
-        ])->findOrFail();
+        $note = App::resolve(NoteDAO::class)->find((int) $_POST['id']) ?? abort();
 
         authorize((int) $note['user_id'] === $this->userId());
 
@@ -114,28 +107,20 @@ class NotesController
                 'note' => $note
             ]);
         }
+        App::resolve(NoteDAO::class)->update($note['id'], $_POST['body']);
 
-        $this->db->query('update notes set body = :body where id = :id', [
-            'id' => $_POST['id'],
-            'body' => $_POST['body']
-        ]);
-
-        // redirect the user
         header('location: /notes');
         die();
     }
 
     public function destroy()
     {
-        $note = $this->db->query('select * from notes where id = :id', [
-            'id' => $_POST['id']
-        ])->findOrFail();
+        $note = App::resolve(NoteDAO::class)->find((int) $_POST['id']) ?? abort();
+
 
         authorize((int) $note['user_id'] === $this->userId());
 
-        $this->db->query('delete from notes where id = :id', [
-            'id' => $_POST['id']
-        ]);
+        App::resolve(NoteDAO::class)->delete($note['id']);
 
         header('location: /notes');
         exit();
